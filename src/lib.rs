@@ -3,12 +3,16 @@ extern crate serde_derive;
 
 extern crate regex;
 extern crate clap;
+extern crate termcolor;
 
 use regex::Regex;
 use walkdir::{WalkDir, DirEntry};
 use std::ffi::OsStr;
 use std::fs::File;
 // use serde_json::{Value};
+
+use std::io::Write;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use serde::{Deserialize, Serialize};
 // use serde_json::Result;
@@ -46,6 +50,7 @@ fn is_notebook(entry: &DirEntry) -> bool {
 fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
     let fpath = e.path();
     let mut file_path_printed = false;
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
     let fp = File::open(fpath).unwrap();
     let v: Notebook = serde_json::from_reader(fp).unwrap();
@@ -57,13 +62,15 @@ fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
                 if re.is_match(ln) {
                     if !file_path_printed {
                         file_path_printed = true;
-                        println!("{}", fpath.to_str().unwrap());
-                        // println!("");
+                        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap();
+                        writeln!(&mut stdout, "{}", fpath.to_str().unwrap()).unwrap();
                     }
                     if !cell_no_printed {
+                        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green))).unwrap();
                         println!("  Cell {}:", i);
                         cell_no_printed = true;
                     }
+                    stdout.reset().unwrap();
                     println!("    {}", ln.trim_end_matches('\n'));
                 }
             }
