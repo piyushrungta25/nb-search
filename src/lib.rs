@@ -43,6 +43,36 @@ fn is_notebook(entry: &DirEntry) -> bool {
     ext
 }
 
+fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
+    let fpath = e.path();
+    let mut file_path_printed = false;
+
+    let fp = File::open(fpath).unwrap();
+    let v: Notebook = serde_json::from_reader(fp).unwrap();
+    for (i, cell) in v.cells.iter().enumerate() {
+        if cell.cell_type == "code" && cell.source.len() > 0 {
+            let mut cell_no_printed = false;
+
+            for ln in cell.source.iter() {
+                if re.is_match(ln) {
+                    if !file_path_printed {
+                        file_path_printed = true;
+                        println!("{}", fpath.to_str().unwrap());
+                        // println!("");
+                    }
+                    if !cell_no_printed {
+                        println!("  Cell {}:", i);
+                        cell_no_printed = true;
+                    }
+                    println!("    {}", ln.trim_end_matches('\n'));
+                }
+            }
+            if cell_no_printed {
+                println!("");
+            }
+        }
+    }
+}
 
 pub fn search(args: clap::ArgMatches) {
     let pattern = args.value_of("pattern").unwrap();
@@ -52,29 +82,7 @@ pub fn search(args: clap::ArgMatches) {
         for entry in WalkDir::new(path).into_iter().filter_entry(is_notebook) {
             let e = entry.unwrap(); 
             if e.file_type().is_file() {
-                let fpath = e.path();
-                println!("{}", fpath.to_str().unwrap());
-                println!("");
-                let fp = File::open(fpath).unwrap();
-                let v: Notebook = serde_json::from_reader(fp).unwrap();
-                for (i, cell) in v.cells.iter().enumerate() {
-                    if cell.cell_type == "code" && cell.source.len() > 0 {
-                        let mut cell_no_printed = false;
-
-                        for ln in cell.source.iter() {
-                            if re.is_match(ln) {
-                                if !cell_no_printed {
-                                    println!("  Cell {}:", i);
-                                    cell_no_printed = true;
-                                }
-                                println!("    {}", ln.trim_end_matches('\n'));
-                            }
-                        }
-                        if cell_no_printed {
-                            println!("");
-                        }
-                    }
-                }
+                search_and_print(e, &re);
             }
         }
     }
