@@ -10,13 +10,11 @@ use walkdir::{WalkDir, DirEntry};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::process;
-// use serde_json::{Value};
 
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use serde::{Deserialize, Serialize};
-// use serde_json::Result;
 
 #[derive(Serialize, Deserialize)]
 struct Cell {
@@ -46,7 +44,6 @@ fn is_notebook(entry: Result<walkdir::DirEntry, walkdir::Error>) -> Option<walkd
 fn print_highlighted_code(matches: Vec<regex::Match>, ln: &str) {
     let mut init = 0;
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    // let ln 
     stdout.reset().unwrap();
     print!("    ");
     for m in matches.into_iter() {
@@ -81,8 +78,6 @@ fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
                 let matches: Vec<regex::Match> = re.find_iter(ln).collect();
 
                 if matches.len() > 0 {
-                    // println!("{}, {}, {}", ln, matches[0].start(), matches[0].end());
-                    // process::exit(0);
                     if !file_path_printed {
                         file_path_printed = true;
                         stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap();
@@ -95,7 +90,6 @@ fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
                     }
                     stdout.reset().unwrap();
                     print_highlighted_code(matches, ln);
-                    // print_highlighted_code("    {}", ln.trim_end_matches('\n'));
                 }
             }
             if cell_no_printed {
