@@ -6,10 +6,9 @@ extern crate clap;
 extern crate termcolor;
 
 use regex::Regex;
-use walkdir::{WalkDir, DirEntry};
+use walkdir::WalkDir;
 use std::ffi::OsStr;
 use std::fs::File;
-use std::process;
 
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
