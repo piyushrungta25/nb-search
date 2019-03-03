@@ -9,6 +9,7 @@ use regex::Regex;
 use walkdir::{WalkDir, DirEntry};
 use std::ffi::OsStr;
 use std::fs::File;
+use std::process;
 // use serde_json::{Value};
 
 use std::io::Write;
@@ -47,6 +48,28 @@ fn is_notebook(entry: &DirEntry) -> bool {
     ext
 }
 
+fn print_highlighted_code(matches: Vec<regex::Match>, ln: &str) {
+    let mut init = 0;
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    // let ln 
+    stdout.reset().unwrap();
+    print!("    ");
+    for m in matches.into_iter() {
+        stdout.reset().unwrap();
+        print!("{}", &ln[init..m.start()]);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red))).unwrap();
+        print!("{}", m.as_str());
+
+        init = m.end();
+    }
+    stdout.reset().unwrap();
+    print!("{}", &ln[init..]);
+    
+
+    println!("");
+
+}
+
 fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
     let fpath = e.path();
     let mut file_path_printed = false;
@@ -59,7 +82,12 @@ fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
             let mut cell_no_printed = false;
 
             for ln in cell.source.iter() {
-                if re.is_match(ln) {
+                let ln = ln.trim_end_matches('\n');
+                let matches: Vec<regex::Match> = re.find_iter(ln).collect();
+
+                if matches.len() > 0 {
+                    // println!("{}, {}, {}", ln, matches[0].start(), matches[0].end());
+                    // process::exit(0);
                     if !file_path_printed {
                         file_path_printed = true;
                         stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap();
@@ -71,7 +99,8 @@ fn search_and_print(e: walkdir::DirEntry, re: &regex::Regex) {
                         cell_no_printed = true;
                     }
                     stdout.reset().unwrap();
-                    println!("    {}", ln.trim_end_matches('\n'));
+                    print_highlighted_code(matches, ln);
+                    // print_highlighted_code("    {}", ln.trim_end_matches('\n'));
                 }
             }
             if cell_no_printed {
