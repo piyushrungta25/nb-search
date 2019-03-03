@@ -29,23 +29,18 @@ struct Notebook {
     cells: Vec<Cell>
 }
 
-fn is_notebook(entry: &DirEntry) -> bool {
-    let is_file:bool = entry.file_type().is_file();
+// Check if the entry is a file and if has the extension ".ipynb"
+fn is_notebook(entry: Result<walkdir::DirEntry, walkdir::Error>) -> Option<walkdir::DirEntry> {
+    let entry = entry.unwrap();
 
-    // If for a directory, false is returned, then that directory is not recursed
-    // into. This block just returns true for a directory if not hidden.
-    if !is_file {
-        let is_hidden = entry.file_name()
-         .to_str()
-         .map(|s| s.starts_with("."))
-         .unwrap_or(false);
-        return !is_hidden;
+    if entry.file_type().is_file() {
+        let ext = entry.path().extension();
+        let ext = ext.unwrap_or(OsStr::new("")).to_str().unwrap();
+        if ext == "ipynb" {
+            return Some(entry);
+        }
     }
-
-    let ext = entry.path().extension();
-    let ext = ext.unwrap_or(OsStr::new("")).to_str().unwrap();
-    let ext: bool = ext == "ipynb";
-    ext
+    return None;
 }
 
 fn print_highlighted_code(matches: Vec<regex::Match>, ln: &str) {
@@ -115,13 +110,8 @@ pub fn search(args: clap::ArgMatches) {
     println!("matchin: {}", pattern);
     let re = Regex::new(pattern).unwrap();
     for path in args.values_of("paths").unwrap() {
-        for entry in WalkDir::new(path).into_iter().filter_entry(is_notebook) {
-            let e = entry.unwrap(); 
-            if e.file_type().is_file() {
-                search_and_print(e, &re);
-            }
+        for entry in WalkDir::new(path).into_iter().filter_map(is_notebook) {
+            search_and_print(entry, &re);
         }
     }
-
-
 }
